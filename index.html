@@ -680,10 +680,12 @@ let lastTime = 0;
       if (!isRunning) return;
 
       if (!timestamp) timestamp = performance.now();
-      const dt = Math.min((timestamp - lastTime) / 16.67, 2);
+          const rawDt = (timestamp - lastTime) / 16.67;
+      const dt = rawDt > 0 && rawDt < 3 ? rawDt : 1;
+
       lastTime = timestamp;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+     ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount += dt;
 
       // Тряска экрана
