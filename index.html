@@ -230,6 +230,22 @@
 
     const groundY = 254;
     let obstacles = [];
+    let particles = [];
+    let shakeTimer = 0;
+
+    function spawnParticles(x, y, color, count = 10) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.8) * 6,
+          size: 3 + Math.random() * 3,
+          color,
+          life: 25 + Math.random() * 15
+        });
+      }
+    }
 
     const stars = Array.from({ length: 22 }, (_, i) => ({
       x: (i * 43) % 800,
@@ -305,6 +321,9 @@
       player.dy = 0;
       player.grounded = true;
       player.jumps = 0;
+           particles = [];
+      shakeTimer = 0;
+ 
       canvas.style.backgroundColor = '#131b2e';
       overlay.style.display = 'none';
       cancelAnimationFrame(animationId);
@@ -513,11 +532,18 @@
       ctx.fillRect(x + 17, y + 8, 3, 3);
     }
 
-    function update() {
+       function update() {
       if (!isRunning) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
+
+      // Тряска экрана
+      ctx.save();
+      if (shakeTimer > 0) {
+        shakeTimer--;
+        ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+      }
 
       drawBackground();
 
@@ -546,6 +572,10 @@
       player.y += player.dy;
 
       if (player.y + player.height >= groundY) {
+        // Пыль из-под копыт при приземлении
+        if (!player.grounded) {
+          spawnParticles(player.x + 15, groundY - 2, '#94a3b8', 5);
+        }
         player.y = groundY - player.height;
         player.dy = 0;
         player.grounded = true;
@@ -583,6 +613,8 @@
           score += 50;
           powerTimer = 360;
           playPowerupSound();
+          // Золотой салют при подборе мухомора
+          spawnParticles(m.x + 12, m.y + 12, '#fbbf24', 12);
           mushrooms.splice(i, 1);
           continue;
         }
@@ -607,9 +639,13 @@
           if (powerTimer > 0) {
             score += 25;
             playSound(280, 0.1);
+            // Разлёт осколков и тряска экрана при сносе препятствия
+            spawnParticles(obs.x + 15, obs.y + 15, obs.kind === 'rock' ? '#94a3b8' : '#f97316', 14);
+            shakeTimer = 10;
             obstacles.splice(i, 1);
             continue;
           } else {
+            ctx.restore();
             gameOver();
             return;
           }
@@ -619,6 +655,20 @@
           obstacles.splice(i, 1);
         }
       }
+
+      // Отрисовка всех частиц (пыль, осколки, салют)
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.25;
+        p.life--;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      ctx.restore();
 
       if (frameCount % 5 === 0) {
         score += powerTimer > 0 ? 2 : 1;
