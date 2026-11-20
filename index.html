@@ -195,6 +195,63 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    canvas, .canvas-box {
+      touch-action: none; /* Отключаем случайный зум и прокрутку при прыжках */
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 0.5rem;
+      }
+      .game-wrapper {
+        padding: 0.8rem;
+        border-radius: 16px;
+      }
+      .hud {
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.7rem;
+      }
+      .title {
+        font-size: 1.05rem;
+      }
+      .scores {
+        gap: 0.5rem;
+        font-size: 0.85rem;
+      }
+      .score-card {
+        padding: 0.3rem 0.5rem;
+      }
+      .scores strong {
+        font-size: 1rem;
+      }
+      /* Компактное меню, чтобы кнопка «Играть» и скины точно влезали на телефон */
+      .overlay {
+        padding: 0.5rem;
+      }
+      .overlay h2 {
+        font-size: 1.15rem;
+        margin-bottom: 0.25rem;
+      }
+      .overlay p {
+        font-size: 0.75rem;
+        margin-bottom: 0.45rem;
+        line-height: 1.2;
+      }
+      .skins-box {
+        gap: 0.3rem;
+        margin-bottom: 0.5rem;
+      }
+      .skin-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+      }
+      #startBtn {
+        padding: 0.45rem 1.3rem;
+        font-size: 0.9rem;
+        border-radius: 8px;
+      }
+    }
 
   </style>
 </head>
@@ -338,9 +395,15 @@
       }
     });
 
-    canvas.addEventListener('pointerdown', () => {
+        canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (isRunning) jump();
+    }, { passive: false });
+
+    canvas.addEventListener('mousedown', () => {
       if (isRunning) jump();
     });
+
 
     function startGame() {
       isRunning = true;
