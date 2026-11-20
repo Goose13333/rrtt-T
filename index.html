@@ -838,23 +838,6 @@ let lastTime = 0;
     }
 
 
-      if (frameCount % 5 === 0) {
-        score += powerTimer > 0 ? 2 : 1;
-        scoreEl.textContent = String(score).padStart(4, '0');
-
-        if (score % 100 === 0) {
-          gameSpeed += 0.25;
-        }
-
-        if (score % 600 === 300) {
-          canvas.style.backgroundColor = '#1e1b38';
-        } else if (score % 600 === 0) {
-          canvas.style.backgroundColor = '#131b2e';
-        }
-      }
-
-      animationId = requestAnimationFrame(update);
-    }
 
     function gameOver() {
       isRunning = false;
