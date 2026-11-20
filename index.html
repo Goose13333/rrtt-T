@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moose Runner — Браузерная игра</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="game-wrapper">
+    <div class="hud">
+      <div class="title">🫎 MOOSE <span>RUNNER</span></div>
+      <div class="scores">
+        <div>Рекорд: <strong id="highScore">0000</strong></div>
+        <div>Счёт: <strong id="currentScore">0000</strong></div>
+      </div>
+    </div>
+
+    <div class="canvas-box">
+      <canvas id="gameCanvas" width="800" height="300"></canvas>
+
+      <!-- Стартовый / финальный экран -->
+      <div class="overlay" id="gameOverlay">
+        <h2 id="overlayTitle">ГОТОВ К ЗАБЕГУ?</h2>
+        <p id="overlaySubtitle">Прыгай через скалы и собирай 🍄 мухоморы для режима неуязвимости и x2 очков!</p>
+        <button id="startBtn" onclick="startGame()">▶ ИГРАТЬ</button>
+      </div>
+    </div>
+
+    <div class="controls-hint">
+      Управление: <span>Пробел</span> / <span>↑</span> / <span>Клик мышкой или пальцем</span>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
