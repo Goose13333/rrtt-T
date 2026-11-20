@@ -164,6 +164,38 @@
       border: 1px solid #334155;
       margin: 0 0.15rem;
     }
+        .skins-box {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.4rem;
+    }
+
+    .skin-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 2px solid #334155;
+      padding: 0.45rem 0.8rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .skin-btn.active {
+      border-color: #fbbf24;
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+    }
+
+    .skin-btn.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
   </style>
 </head>
 <body>
@@ -183,6 +215,8 @@
       <div class="overlay" id="gameOverlay">
         <h2 id="overlayTitle">ГОТОВ К ЗАБЕГУ?</h2>
         <p id="overlaySubtitle">Перепрыгивай скалы и серых летучих мышей. Редкие 🍄 мухоморы дают неуязвимость и x2 очки!</p>
+                <div class="skins-box" id="skinsBox"></div>
+
         <button id="startBtn" type="button">▶ ИГРАТЬ</button>
       </div>
     </div>
@@ -435,32 +469,76 @@
       ctx.fillRect(fireX + 8 + Math.sin(frameCount * 0.2) * 4, sparkY, 2, 2);
     }
    
+    let currentSkin = localStorage.getItem('mooseSkin') || 'default';
+
+    const skins = [
+      { id: 'default', name: '🫎 Обычный', req: 0, body: '#854d0e', horn: '#f5f5f4', legs: '#422006', nose: null },
+      { id: 'rudolph', name: '🦌 Олень (300)', req: 300, body: '#b45309', horn: '#fde68a', legs: '#78350f', nose: '#ef4444' },
+      { id: 'gold', name: '👑 Золотой (700)', req: 700, body: '#eab308', horn: '#ffffff', legs: '#a16207', nose: null },
+      { id: 'ghost', name: '👻 Призрак (1200)', req: 1200, body: '#2dd4bf', horn: '#ccfbf1', legs: '#0f766e', nose: '#a855f7' }
+    ];
+
+    function renderSkins() {
+      const box = document.getElementById('skinsBox');
+      if (!box) return;
+      box.innerHTML = '';
+      skins.forEach(s => {
+        const unlocked = highScore >= s.req;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'skin-btn' + (currentSkin === s.id ? ' active' : '') + (!unlocked ? ' locked' : '');
+        btn.textContent = unlocked ? s.name.split(' (')[0] : `🔒 ${s.req}`;
+        btn.onclick = () => {
+          if (!unlocked) return;
+          currentSkin = s.id;
+          localStorage.setItem('mooseSkin', currentSkin);
+          playSound(600, 0.08, 'triangle');
+          renderSkins();
+        };
+        box.appendChild(btn);
+      });
+    }
+    renderSkins();
+
     function drawPlayer() {
       const x = player.x;
       const y = player.y;
       const isPowered = powerTimer > 0;
+      const skin = skins.find(s => s.id === currentSkin) || skins[0];
 
-      const bodyColor = isPowered && frameCount % 6 < 3 ? '#f59e0b' : '#854d0e';
-      const hornColor = isPowered ? '#fef08a' : '#f5f5f4';
+      const bodyColor = isPowered && frameCount % 6 < 3 ? '#f59e0b' : skin.body;
+      const hornColor = isPowered ? '#fef08a' : skin.horn;
 
+      // Ветвистые рога
       ctx.fillStyle = hornColor;
       ctx.fillRect(x + 24, y, 4, 14);
       ctx.fillRect(x + 19, y + 3, 14, 4);
       ctx.fillRect(x + 17, y, 4, 6);
       ctx.fillRect(x + 31, y + 1, 4, 6);
 
+      // Туловище и шея
       ctx.fillStyle = bodyColor;
       ctx.fillRect(x + 6, y + 22, 26, 15);
       ctx.fillRect(x + 24, y + 14, 10, 12);
       ctx.fillRect(x + 2, y + 24, 4, 5);
 
+      // Голова и морда
       ctx.fillRect(x + 26, y + 11, 18, 11);
       ctx.fillRect(x + 36, y + 15, 10, 8);
       ctx.fillRect(x + 30, y + 22, 4, 5);
+
+      // Цветной нос для Оленя и Призрака
+      if (skin.nose) {
+        ctx.fillStyle = skin.nose;
+        ctx.fillRect(x + 43, y + 15, 4, 4);
+      }
+
+      // Глаз
       ctx.fillStyle = isPowered ? '#ef4444' : '#ffffff';
       ctx.fillRect(x + 31, y + 13, 3, 3);
 
-      ctx.fillStyle = '#422006';
+      // Ноги
+      ctx.fillStyle = skin.legs;
       if (!player.grounded) {
         ctx.fillRect(x + 8, y + 37, 4, 8);
         ctx.fillRect(x + 14, y + 37, 4, 6);
@@ -475,7 +553,6 @@
       }
     }
 
-    function drawObstacle(obs) {
       const x = obs.x;
       const y = obs.y;
 
@@ -697,6 +774,8 @@
         highScore = score;
         localStorage.setItem('mooseRunnerHigh', highScore);
         highScoreEl.textContent = String(highScore).padStart(4, '0');
+                renderSkins();
+
       }
 
       overlayTitle.textContent = 'ИГРА ОКОНЧЕНА!';
