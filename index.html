@@ -333,11 +333,11 @@
         });
       }
     }
-
     function drawBackground() {
-      ctx.fillStyle = 'rgba(254, 240, 138, 0.15)';
+      // 1. Луна и ореол
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.12)';
       ctx.beginPath();
-      ctx.arc(690, 62, 26, 0, Math.PI * 2);
+      ctx.arc(690, 62, 28, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = '#fef08a';
@@ -345,14 +345,77 @@
       ctx.arc(690, 62, 18, 0, Math.PI * 2);
       ctx.fill();
 
+      // 2. Звёзды
       ctx.fillStyle = '#cbd5e1';
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i];
-        const starX = ((s.x - frameCount * 0.3) % canvas.width + canvas.width) % canvas.width;
+        const starX = ((s.x - frameCount * 0.2) % canvas.width + canvas.width) % canvas.width;
         ctx.fillRect(starX, s.y, s.size, s.size);
       }
-    }
 
+      // 3. Далёкие горы (медленный параллакс)
+      ctx.fillStyle = '#192238';
+      for (let i = 0; i < 6; i++) {
+        const mx = ((i * 180 - frameCount * 0.5) % 1080 + 1080) % 1080 - 140;
+        ctx.beginPath();
+        ctx.moveTo(mx, groundY);
+        ctx.lineTo(mx + 90, groundY - 95);
+        ctx.lineTo(mx + 180, groundY);
+        ctx.fill();
+      }
+
+      // 4. Силуэты ёлок на горизонте (средний параллакс)
+      ctx.fillStyle = '#0d1322';
+      for (let i = 0; i < 10; i++) {
+        const tx = ((i * 95 - frameCount * 1.2) % 950 + 950) % 950 - 60;
+        const h = 42 + (i % 3) * 14;
+        // Ствол
+        ctx.fillRect(tx + 11, groundY - 8, 4, 8);
+        // Три яруса лап ёлки
+        ctx.beginPath();
+        ctx.moveTo(tx, groundY - 8);
+        ctx.lineTo(tx + 13, groundY - h * 0.55);
+        ctx.lineTo(tx + 26, groundY - 8);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(tx + 3, groundY - h * 0.4);
+        ctx.lineTo(tx + 13, groundY - h * 0.8);
+        ctx.lineTo(tx + 23, groundY - h * 0.4);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(tx + 6, groundY - h * 0.65);
+        ctx.lineTo(tx + 13, groundY - h);
+        ctx.lineTo(tx + 20, groundY - h * 0.65);
+        ctx.fill();
+      }
+
+      // 5. Лесной костёр на заднем плане (появляется периодически)
+      const fireX = ((420 - frameCount * 1.2) % 950 + 950) % 950 - 60;
+      // Тёплое свечение вокруг костра
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.14)';
+      ctx.beginPath();
+      ctx.arc(fireX + 10, groundY - 10, 26 + (frameCount % 6), 0, Math.PI * 2);
+      ctx.fill();
+
+      // Дрова
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(fireX + 2, groundY - 4, 16, 4);
+
+      // Живое пламя (меняет высоту каждый кадр)
+      const flicker = Math.sin(frameCount * 0.4) * 3;
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(fireX + 4, groundY - 12 - flicker, 12, 8 + flicker);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(fireX + 7, groundY - 9 - flicker * 0.6, 6, 5 + flicker * 0.6);
+
+      // Летящая вверх искра
+      const sparkY = groundY - 14 - (frameCount % 25);
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(fireX + 8 + Math.sin(frameCount * 0.2) * 4, sparkY, 2, 2);
+    }
+   
     function drawPlayer() {
       const x = player.x;
       const y = player.y;
