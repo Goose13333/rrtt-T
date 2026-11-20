@@ -403,6 +403,7 @@
     canvas.addEventListener('mousedown', () => {
       if (isRunning) jump();
     });
+let lastTime = 0;
 
 
     function startGame() {
@@ -423,6 +424,8 @@
  
       canvas.style.backgroundColor = '#131b2e';
       overlay.style.display = 'none';
+      lastTime = performance.now();
+
       cancelAnimationFrame(animationId);
       update();
     }
@@ -673,16 +676,20 @@
       ctx.fillRect(x + 17, y + 8, 3, 3);
     }
 
-       function update() {
+       function update(timestamp) {
       if (!isRunning) return;
 
+      if (!timestamp) timestamp = performance.now();
+      const dt = Math.min((timestamp - lastTime) / 16.67, 2);
+      lastTime = timestamp;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frameCount++;
+      frameCount += dt;
 
       // Тряска экрана
       ctx.save();
       if (shakeTimer > 0) {
-        shakeTimer--;
+        shakeTimer -= dt;
         ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
       }
 
@@ -702,18 +709,17 @@
       }
 
       if (powerTimer > 0) {
-        powerTimer--;
+        powerTimer -= dt;
         ctx.fillStyle = '#f59e0b';
         ctx.fillRect(20, 16, (powerTimer / 360) * 160, 8);
         ctx.font = 'bold 14px sans-serif';
         ctx.fillText('🍄 ЯРОСТЬ + x2 ОЧКИ!', 190, 25);
       }
 
-      player.dy += player.gravity;
-      player.y += player.dy;
+      player.dy += player.gravity * dt;
+      player.y += player.dy * dt;
 
       if (player.y + player.height >= groundY) {
-        // Пыль из-под копыт при приземлении
         if (!player.grounded) {
           spawnParticles(player.x + 15, groundY - 2, '#94a3b8', 5);
         }
@@ -725,8 +731,11 @@
 
       drawPlayer();
 
+      const prevFrame = Math.floor(frameCount - dt);
+      const currFrame = Math.floor(frameCount);
+
       const spawnRate = Math.max(65, Math.floor(125 - gameSpeed * 3));
-      if (frameCount % spawnRate === 0) {
+      if (currFrame !== prevFrame && currFrame % spawnRate === 0) {
         spawnObstacle();
       }
 
@@ -742,7 +751,7 @@
 
       for (let i = mushrooms.length - 1; i >= 0; i--) {
         const m = mushrooms[i];
-        m.x -= gameSpeed;
+        m.x -= gameSpeed * dt;
         drawMushroom(m);
 
         if (
@@ -754,7 +763,6 @@
           score += 50;
           powerTimer = 360;
           playPowerupSound();
-          // Золотой салют при подборе мухомора
           spawnParticles(m.x + 12, m.y + 12, '#fbbf24', 12);
           mushrooms.splice(i, 1);
           continue;
@@ -767,7 +775,7 @@
 
       for (let i = obstacles.length - 1; i >= 0; i--) {
         const obs = obstacles[i];
-        obs.x -= gameSpeed;
+        obs.x -= gameSpeed * dt;
 
         drawObstacle(obs);
 
@@ -780,7 +788,6 @@
           if (powerTimer > 0) {
             score += 25;
             playSound(280, 0.1);
-            // Разлёт осколков и тряска экрана при сносе препятствия
             spawnParticles(obs.x + 15, obs.y + 15, obs.kind === 'rock' ? '#94a3b8' : '#f97316', 14);
             shakeTimer = 10;
             obstacles.splice(i, 1);
@@ -797,19 +804,37 @@
         }
       }
 
-      // Отрисовка всех частиц (пыль, осколки, салют)
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.25;
-        p.life--;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.25 * dt;
+        p.life -= dt;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, p.size, p.size);
         if (p.life <= 0) particles.splice(i, 1);
       }
 
       ctx.restore();
+
+      if (currFrame !== prevFrame && currFrame % 5 === 0) {
+        score += powerTimer > 0 ? 2 : 1;
+        scoreEl.textContent = String(score).padStart(4, '0');
+
+        if (score % 100 === 0) {
+          gameSpeed += 0.25;
+        }
+
+        if (score % 600 === 300) {
+          canvas.style.backgroundColor = '#1e1b38';
+        } else if (score % 600 === 0) {
+          canvas.style.backgroundColor = '#131b2e';
+        }
+      }
+
+      animationId = requestAnimationFrame(update);
+    }
+
 
       if (frameCount % 5 === 0) {
         score += powerTimer > 0 ? 2 : 1;
