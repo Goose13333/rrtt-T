@@ -17,9 +17,10 @@ let gameSpeed = 4.2;
 let frameCount = 0;
 let animationId;
 
+// Редкий спавн мухоморов
 let mushrooms = [];
 let powerTimer = 0;
-let nextMushroomScore = 150;
+let nextMushroomScore = 450;
 
 const player = {
   x: 70,
@@ -35,6 +36,13 @@ const player = {
 
 const groundY = 254;
 let obstacles = [];
+
+// Звёзды на фоне
+const stars = Array.from({ length: 22 }, (_, i) => ({
+  x: (i * 43) % 800,
+  y: 20 + ((i * 29) % 150),
+  size: i % 3 === 0 ? 2 : 1
+}));
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -92,12 +100,12 @@ function startGame() {
   obstacles = [];
   mushrooms = [];
   powerTimer = 0;
-  nextMushroomScore = 150;
+  nextMushroomScore = Math.floor(450 + Math.random() * 150);
   player.y = groundY - player.height;
   player.dy = 0;
   player.grounded = true;
   player.jumps = 0;
-  canvas.style.backgroundColor = '#111622';
+  canvas.style.backgroundColor = '#131b2e';
   overlay.style.display = 'none';
   update();
 }
@@ -105,12 +113,12 @@ function startGame() {
 function spawnObstacle() {
   const type = Math.random();
 
-  if (type > 0.72 && score > 80) {
+  if (type > 0.7 && score > 80) {
     obstacles.push({
       kind: 'bat',
       x: canvas.width + 20,
       y: groundY - 78,
-      width: 38,
+      width: 40,
       height: 24
     });
   } else {
@@ -125,33 +133,59 @@ function spawnObstacle() {
   }
 }
 
+function drawBackground() {
+  // Луна
+  ctx.fillStyle = 'rgba(254, 240, 138, 0.15)';
+  ctx.beginPath();
+  ctx.arc(690, 62, 26, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(690, 62, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Мерцающие звёзды
+  ctx.fillStyle = '#cbd5e1';
+  for (let i = 0; i < stars.length; i++) {
+    const s = stars[i];
+    const starX = ((s.x - frameCount * 0.3) % canvas.width + canvas.width) % canvas.width;
+    ctx.fillRect(starX, s.y, s.size, s.size);
+  }
+}
+
 function drawPlayer() {
   const x = player.x;
   const y = player.y;
   const isPowered = powerTimer > 0;
 
-  const bodyColor = isPowered && frameCount % 6 < 3 ? '#f59e0b' : '#78350f';
-  const hornColor = isPowered ? '#fef08a' : '#e7e5e4';
+  const bodyColor = isPowered && frameCount % 6 < 3 ? '#f59e0b' : '#854d0e';
+  const hornColor = isPowered ? '#fef08a' : '#f5f5f4';
 
+  // Ветвистые рога
   ctx.fillStyle = hornColor;
   ctx.fillRect(x + 24, y, 4, 14);
   ctx.fillRect(x + 19, y + 3, 14, 4);
   ctx.fillRect(x + 17, y, 4, 6);
   ctx.fillRect(x + 31, y + 1, 4, 6);
 
+  // Туловище и шея
   ctx.fillStyle = bodyColor;
   ctx.fillRect(x + 6, y + 22, 26, 15);
   ctx.fillRect(x + 24, y + 14, 10, 12);
   ctx.fillRect(x + 2, y + 24, 4, 5);
 
+  // Голова и морда
   ctx.fillRect(x + 26, y + 11, 18, 11);
   ctx.fillRect(x + 36, y + 15, 10, 8);
   ctx.fillRect(x + 30, y + 22, 4, 5);
 
+  // Глаз
   ctx.fillStyle = isPowered ? '#ef4444' : '#ffffff';
   ctx.fillRect(x + 31, y + 13, 3, 3);
 
-  ctx.fillStyle = '#451a03';
+  // Ноги
+  ctx.fillStyle = '#422006';
   if (!player.grounded) {
     ctx.fillRect(x + 8, y + 37, 4, 8);
     ctx.fillRect(x + 14, y + 37, 4, 6);
@@ -171,7 +205,7 @@ function drawObstacle(obs) {
   const y = obs.y;
 
   if (obs.kind === 'rock') {
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = '#64748b';
     const steps = 7;
     const stepHeight = obs.height / steps;
 
@@ -182,26 +216,29 @@ function drawObstacle(obs) {
       ctx.fillRect(rowX, y + i * stepHeight, rowWidth, stepHeight + 1);
     }
 
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#94a3b8';
     ctx.fillRect(x + obs.width / 2 - 2, y + 5, 3, obs.height - 7);
   } else {
-    ctx.fillStyle = '#07090e';
-    ctx.fillRect(x + 14, y + 8, 10, 12);
-    ctx.fillRect(x + 14, y + 4, 3, 4);
-    ctx.fillRect(x + 21, y + 4, 3, 4);
+    // Яркая серая летучая мышь (отлично видна на тёмном фоне)
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(x + 14, y + 7, 12, 13);
+    ctx.fillRect(x + 14, y + 3, 3, 4);
+    ctx.fillRect(x + 23, y + 3, 3, 4);
 
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(x + 15, y + 10, 2, 2);
-    ctx.fillRect(x + 20, y + 10, 2, 2);
+    // Светящиеся глаза
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(x + 16, y + 10, 3, 3);
+    ctx.fillRect(x + 21, y + 10, 3, 3);
 
-    ctx.fillStyle = '#1e293b';
+    // Светло-серые крылья с размахом
+    ctx.fillStyle = '#cbd5e1';
     const flapUp = Math.floor(frameCount / 6) % 2 === 0;
     if (flapUp) {
-      ctx.fillRect(x + 2, y + 2, 12, 6);
-      ctx.fillRect(x + 24, y + 2, 12, 6);
+      ctx.fillRect(x + 1, y + 1, 13, 6);
+      ctx.fillRect(x + 26, y + 1, 13, 6);
     } else {
-      ctx.fillRect(x + 2, y + 12, 12, 6);
-      ctx.fillRect(x + 24, y + 12, 12, 6);
+      ctx.fillRect(x + 1, y + 12, 13, 6);
+      ctx.fillRect(x + 26, y + 12, 13, 6);
     }
   }
 }
@@ -229,14 +266,17 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   frameCount++;
 
-  ctx.strokeStyle = '#334155';
+  drawBackground();
+
+  // Земля
+  ctx.strokeStyle = '#475569';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(0, groundY);
   ctx.lineTo(canvas.width, groundY);
   ctx.stroke();
 
-  ctx.fillStyle = '#1e293b';
+  ctx.fillStyle = '#334155';
   for (let i = 0; i < 8; i++) {
     const stoneX = ((i * 115 - frameCount * gameSpeed) % canvas.width + canvas.width) % canvas.width;
     ctx.fillRect(stoneX, groundY + 8 + (i % 3) * 6, 6, 3);
@@ -246,7 +286,7 @@ function update() {
     powerTimer--;
     ctx.fillStyle = '#f59e0b';
     ctx.fillRect(20, 16, (powerTimer / 360) * 160, 8);
-    ctx.font = 'bold 14px monospace';
+    ctx.font = 'bold 14px sans-serif';
     ctx.fillText('🍄 ЯРОСТЬ + x2 ОЧКИ!', 190, 25);
   }
 
@@ -267,6 +307,7 @@ function update() {
     spawnObstacle();
   }
 
+  // Редкий спавн мухомора (каждые 450–700 очков)
   if (score >= nextMushroomScore) {
     mushrooms.push({
       x: canvas.width + 80,
@@ -274,7 +315,7 @@ function update() {
       width: 26,
       height: 24
     });
-    nextMushroomScore += Math.floor(160 + Math.random() * 110);
+    nextMushroomScore += Math.floor(450 + Math.random() * 250);
   }
 
   for (let i = mushrooms.length - 1; i >= 0; i--) {
@@ -337,9 +378,9 @@ function update() {
     }
 
     if (score % 600 === 300) {
-      canvas.style.backgroundColor = '#1c1917';
+      canvas.style.backgroundColor = '#1e1b38';
     } else if (score % 600 === 0) {
-      canvas.style.backgroundColor = '#111622';
+      canvas.style.backgroundColor = '#131b2e';
     }
   }
 
@@ -358,7 +399,3 @@ function gameOver() {
   }
 
   overlayTitle.textContent = 'ИГРА ОКОНЧЕНА!';
-  overlaySubtitle.innerHTML = `Твой счёт: <strong>${score}</strong> • Рекорд: <strong>${highScore}</strong>`;
-  startBtn.textContent = '↻ ЕЩЁ РАЗ';
-  overlay.style.display = 'flex';
-}
